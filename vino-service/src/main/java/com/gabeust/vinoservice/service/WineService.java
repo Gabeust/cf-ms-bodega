@@ -2,6 +2,7 @@ package com.gabeust.vinoservice.service;
 
 import com.gabeust.vinoservice.entity.Wine;
 import com.gabeust.vinoservice.repository.WineRepository;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +20,9 @@ public class WineService implements WineServiceImpl{
     @Override
     public List<Wine> findAll() {
         return wineRepository.findAll();
+    }
+    public List<Wine> searchWithSpecification(Specification<Wine> spec) {
+        return wineRepository.findAll(spec);
     }
 
     @Override
