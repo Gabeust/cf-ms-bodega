@@ -1,13 +1,10 @@
 package com.gabeust.vinoservice.controller;
 
+import com.gabeust.vinoservice.dto.WineFilterDTO;
 import com.gabeust.vinoservice.entity.Wine;
 import com.gabeust.vinoservice.service.WineService;
-import net.kaczmarzyk.spring.data.jpa.domain.Equal;
-import net.kaczmarzyk.spring.data.jpa.domain.GreaterThanOrEqual;
-import net.kaczmarzyk.spring.data.jpa.domain.LessThanOrEqual;
-import net.kaczmarzyk.spring.data.jpa.domain.LikeIgnoreCase;
-import net.kaczmarzyk.spring.data.jpa.web.annotation.And;
-import net.kaczmarzyk.spring.data.jpa.web.annotation.Spec;
+import com.gabeust.vinoservice.util.WineSpecs;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,20 +24,29 @@ public class WineController {
     }
 
     @GetMapping("/filter")
-    public List<Wine> searchWithFilters(
-            @And({
-                    @Spec(path = "name", params = "name", spec = LikeIgnoreCase.class),
-                    @Spec(path = "winery", params = "winery", spec = LikeIgnoreCase.class),
-                    @Spec(path = "varietal", params = "varietal", spec = LikeIgnoreCase.class),
-                    @Spec(path = "year", params = "year", spec = Equal.class),
-                    @Spec(path = "year", params = "yearMin", spec = GreaterThanOrEqual.class),
-                    @Spec(path = "year", params = "yearMax", spec = LessThanOrEqual.class),
-                    @Spec(path = "price", params = "price", spec = Equal.class),
-                    @Spec(path = "price", params = "priceMin", spec = GreaterThanOrEqual.class),
-                    @Spec(path = "price", params = "priceMax", spec = LessThanOrEqual.class)
-            }) Specification<Wine> spec
-    ) {
+    public List<Wine> filterWines(@ParameterObject WineFilterDTO filters) {
+        Specification<Wine> spec = Specification.where(null);
+
+        if (filters.name() != null)
+            spec = spec.and(WineSpecs.nameLike(filters.name()));
+        if (filters.winery() != null)
+            spec = spec.and(WineSpecs.wineryLike(filters.winery()));
+        if (filters.varietal() != null)
+            spec = spec.and(WineSpecs.varietalLike(filters.varietal()));
+        if (filters.year() != null)
+            spec = spec.and(WineSpecs.yearEquals(filters.year()));
+        if (filters.yearMin() != null)
+            spec = spec.and(WineSpecs.yearGte(filters.yearMin()));
+        if (filters.yearMax() != null)
+            spec = spec.and(WineSpecs.yearLte(filters.yearMax()));
+        if (filters.price() != null)
+            spec = spec.and(WineSpecs.priceEquals(filters.price()));
+        if (filters.priceMin() != null)
+            spec = spec.and(WineSpecs.priceGte(filters.priceMin()));
+        if (filters.priceMax() != null)
+            spec = spec.and(WineSpecs.priceLte(filters.priceMax()));
         return wineService.searchWithSpecification(spec);
+
     }
 
     @GetMapping()
