@@ -11,7 +11,7 @@ public interface WineServiceImpl {
 
     Optional<Wine> findById(Long id);
     Wine save(Wine wine);
-    void deleteById(long id);
+    boolean deleteById(long id);
     Wine updateById(Long id, Wine newWine);
 
 }

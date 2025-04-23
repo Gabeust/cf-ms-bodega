@@ -36,8 +36,13 @@ public class WineService implements WineServiceImpl{
     }
 
     @Override
-    public void deleteById(long id) {
-        wineRepository.deleteById(id);
+    public boolean deleteById(long id) {
+        if (wineRepository.existsById(id)) {
+            wineRepository.deleteById(id);
+            return true;
+        }
+        return false;
+
     }
 
     @Override
