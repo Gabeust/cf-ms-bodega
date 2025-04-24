@@ -2,7 +2,7 @@ package com.gabeust.vinoservice.controller;
 
 import com.gabeust.vinoservice.dto.WineFilterDTO;
 import com.gabeust.vinoservice.entity.Wine;
-import com.gabeust.vinoservice.service.WineService;
+import com.gabeust.vinoservice.service.WineServiceImpl;
 import com.gabeust.vinoservice.util.WineSpecs;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,14 +20,14 @@ import java.util.List;
 @RequestMapping("/api/v1/wines")
 public class WineController {
 
-    private final WineService wineService;
+    private final WineServiceImpl wineService;
 
     /**
      * Constructor con inyección de dependencias.
      *
      * @param wineService servicio de vinos
      */
-    public WineController(WineService wineService) {
+    public WineController(WineServiceImpl wineService) {
         this.wineService = wineService;
     }
     /**

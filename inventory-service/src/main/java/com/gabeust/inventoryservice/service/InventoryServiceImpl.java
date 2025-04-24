@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class InventoryService implements InventoryServiceImple{
+public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
 
-    public InventoryService(InventoryRepository inventoryRepository) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository) {
         this.inventoryRepository = inventoryRepository;
     }
 
@@ -34,7 +34,7 @@ public class InventoryService implements InventoryServiceImple{
     @Override
     public void increaseStock(Long wineId, int amount) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
-                .orElseThrow(() -> new RuntimeException("Inventario no encontrado para el vino con ID: " + wineId));
+                .orElseThrow(() -> new RuntimeException("Inventory not found for wine with ID: "+ wineId));
 
         inventory.setQuantity(inventory.getQuantity() + amount);
         inventoryRepository.save(inventory);
@@ -43,21 +43,19 @@ public class InventoryService implements InventoryServiceImple{
     @Override
     public void decreaseStock(Long wineId, int amount) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
-                .orElseThrow(() -> new RuntimeException("Inventario no encontrado para el vino con ID: " + wineId));
+                .orElseThrow(() -> new RuntimeException("Inventory not found for wine with ID: " + wineId));
 
         int newQuantity = inventory.getQuantity() - amount;
         if (newQuantity < 0) {
             newQuantity = 0;
         }
-
         inventory.setQuantity(newQuantity);
         inventoryRepository.save(inventory);
     }
 
-
     @Override
     public boolean deleteByWineId(Long wineId) {
-        if (inventoryRepository.existsByWineId()){
+        if (inventoryRepository.existsByWineId(wineId)){
             inventoryRepository.deleteById(wineId);
             return true;
         }else return false;
