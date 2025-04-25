@@ -21,5 +21,5 @@ public class CartItem {
 
     private Long wineId;
     private Integer quantity;
-    private Integer priceAtTime;
+
 }
