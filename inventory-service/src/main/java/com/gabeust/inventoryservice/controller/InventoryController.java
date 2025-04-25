@@ -1,5 +1,6 @@
 package com.gabeust.inventoryservice.controller;
 
+import com.gabeust.inventoryservice.dto.InventoryWithWineDTO;
 import com.gabeust.inventoryservice.entity.Inventory;
 import com.gabeust.inventoryservice.service.InventoryServiceImpl;
 import org.springframework.http.ResponseEntity;
@@ -32,10 +33,10 @@ public class InventoryController {
      * @param wineId ID del vino
      * @return Inventario asociado al vino
      */
-    @GetMapping("/{wineId}")
-    public ResponseEntity<Optional<Inventory>> findByWineId(@PathVariable Long wineId) {
-        var inventory = inventoryService.findByWineId(wineId);
-        return ResponseEntity.ok(inventory);
+    @GetMapping("/details/{wineId}")
+    public ResponseEntity<InventoryWithWineDTO> findByWineId(@PathVariable Long wineId) {
+        InventoryWithWineDTO dto = inventoryService.findInventoryWithWineInfo(wineId);
+        return ResponseEntity.ok(dto);
     }
 
     /**
