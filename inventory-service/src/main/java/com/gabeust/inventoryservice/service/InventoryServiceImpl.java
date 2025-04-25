@@ -1,7 +1,10 @@
 package com.gabeust.inventoryservice.service;
 
+import com.gabeust.inventoryservice.dto.InventoryWithWineDTO;
+import com.gabeust.inventoryservice.dto.WineDTO;
 import com.gabeust.inventoryservice.entity.Inventory;
 import com.gabeust.inventoryservice.repository.InventoryRepository;
+import com.gabeust.inventoryservice.service.client.WineClientService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +14,11 @@ import java.util.Optional;
 public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
+    private final WineClientService wineClientService;
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService) {
         this.inventoryRepository = inventoryRepository;
+        this.wineClientService = wineClientService;
     }
 
     @Override
@@ -34,7 +39,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public void increaseStock(Long wineId, int amount) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
-                .orElseThrow(() -> new RuntimeException("Inventory not found for wine with ID: "+ wineId));
+                .orElseThrow(() -> new RuntimeException("Inventory not found for wine with ID: " + wineId));
 
         inventory.setQuantity(inventory.getQuantity() + amount);
         inventoryRepository.save(inventory);
@@ -47,7 +52,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         int newQuantity = inventory.getQuantity() - amount;
         if (newQuantity < 0) {
-            newQuantity = 0;
+            throw new RuntimeException("Insufficient stock for wine with ID: " + wineId);
         }
         inventory.setQuantity(newQuantity);
         inventoryRepository.save(inventory);
@@ -55,9 +60,23 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public boolean deleteByWineId(Long wineId) {
-        if (inventoryRepository.existsByWineId(wineId)){
-            inventoryRepository.deleteById(wineId);
-            return true;
-        }else return false;
+        Inventory inventory = inventoryRepository.findByWineId(wineId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found for wine with ID: " + wineId));
+
+        inventoryRepository.delete(inventory);
+        return true;
+    }
+    public InventoryWithWineDTO findInventoryWithWineInfo(Long wineId) {
+        Inventory inventory = inventoryRepository.findByWineId(wineId)
+                .orElseThrow(() -> new RuntimeException("Inventory not found for wine ID: " + wineId));
+
+        WineDTO wine = wineClientService.getWineById(wineId);
+
+        return new InventoryWithWineDTO(
+                wineId,
+                inventory.getQuantity(),
+                inventory.getMinimumQuantity(),
+                wine
+        );
     }
 }

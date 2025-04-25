@@ -26,5 +26,4 @@ public class Inventory {
     private Integer minimumQuantity;
     private LocalDateTime updatedAt;
 
-
 }
