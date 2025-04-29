@@ -1,15 +1,13 @@
 package com.gabeust.inventoryservice.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+
 
 @Getter
 @Setter
@@ -24,6 +22,12 @@ public class Inventory {
     private Long wineId;
     private Integer quantity;
     private Integer minimumQuantity;
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
+    @PrePersist
+    public void prePersist() {
+        if (updatedAt == null) {
+            updatedAt = LocalDate.now();
+        }
+    }
 }
