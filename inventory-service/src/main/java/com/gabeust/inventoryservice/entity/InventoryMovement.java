@@ -1,5 +1,6 @@
 package com.gabeust.inventoryservice.entity;
 
+import com.gabeust.inventoryservice.entity.enums.MovementType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -8,30 +9,24 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class Inventory {
-
+public class InventoryMovement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long wineId;
+    @Enumerated(EnumType.STRING)
+    private MovementType type;
     private Integer quantity;
-    private Integer minimumQuantity;
-    private LocalDate updatedAt;
+    private LocalDate date;
 
     @PrePersist
     public void prePersist() {
-        updatedAt = LocalDate.now();
+        date = LocalDate.now();
     }
 
-    @PreUpdate
-    public void preUpdate() {
-        updatedAt = LocalDate.now();
-    }
 }
-
