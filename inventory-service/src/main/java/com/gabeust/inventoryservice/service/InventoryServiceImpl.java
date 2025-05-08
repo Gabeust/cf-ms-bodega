@@ -3,6 +3,7 @@ package com.gabeust.inventoryservice.service;
 import com.gabeust.inventoryservice.dto.InventoryWithWineDTO;
 import com.gabeust.inventoryservice.dto.WineDTO;
 import com.gabeust.inventoryservice.entity.Inventory;
+import com.gabeust.inventoryservice.entity.enums.MovementType;
 import com.gabeust.inventoryservice.repository.InventoryRepository;
 import com.gabeust.inventoryservice.service.client.WineClientService;
 import org.springframework.stereotype.Service;
@@ -15,10 +16,12 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final WineClientService wineClientService;
+    private final InventoryMovementService movementService;
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService, InventoryMovementService movementService) {
         this.inventoryRepository = inventoryRepository;
         this.wineClientService = wineClientService;
+        this.movementService = movementService;
     }
 
     @Override
@@ -43,6 +46,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         inventory.setQuantity(inventory.getQuantity() + amount);
         inventoryRepository.save(inventory);
+        movementService.registerMovement(wineId, MovementType.INCREASE, amount);
     }
 
     @Override
@@ -56,6 +60,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
         inventory.setQuantity(newQuantity);
         inventoryRepository.save(inventory);
+        movementService.registerMovement(wineId, MovementType.DECREASE, amount);
     }
 
     @Override

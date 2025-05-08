@@ -93,5 +93,6 @@ public class InventoryController {
             return ResponseEntity.notFound().build();  // 404 Not Found
         }
     }
+
 }
 
