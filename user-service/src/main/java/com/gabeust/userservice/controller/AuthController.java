@@ -1,6 +1,7 @@
 package com.gabeust.userservice.controller;
 
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.gabeust.userservice.dto.AuthLoginRequestDTO;
 import com.gabeust.userservice.dto.AuthResponseDTO;
 import com.gabeust.userservice.dto.ChangePasswordRequest;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
  * Provee endpoints para login, logout, cambio y restablecimiento de contraseña.
  */
 
+@CrossOrigin(origins = "http://127.0.0.1:5500")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -109,6 +111,16 @@ public class AuthController {
         userService.save(user);
 
         return ResponseEntity.ok("Password changed successfully.");
+    }
+
+    @GetMapping("/validate")
+    public ResponseEntity<Void> validateToken(@RequestParam("token") String token) {
+        try {
+            jwtUtils.validateToken(token);
+            return ResponseEntity.ok().build(); // Token válido
+        } catch (JWTVerificationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // Token inválido
+        }
     }
 
 }

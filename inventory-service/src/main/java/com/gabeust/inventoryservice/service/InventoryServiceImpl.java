@@ -5,6 +5,7 @@ import com.gabeust.inventoryservice.dto.WineDTO;
 import com.gabeust.inventoryservice.entity.Inventory;
 import com.gabeust.inventoryservice.repository.InventoryRepository;
 import com.gabeust.inventoryservice.service.client.WineClientService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,10 +16,12 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final WineClientService wineClientService;
+    private final HttpServletRequest request;
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService, HttpServletRequest request) {
         this.inventoryRepository = inventoryRepository;
         this.wineClientService = wineClientService;
+        this.request = request;
     }
 
     @Override
@@ -69,7 +72,7 @@ public class InventoryServiceImpl implements InventoryService {
     public InventoryWithWineDTO findInventoryWithWineInfo(Long wineId) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
                 .orElseThrow(() -> new RuntimeException("Inventory not found for wine ID: " + wineId));
-
+        String token = request.getHeader("Authorization");
         WineDTO wine = wineClientService.getWineById(wineId);
 
         return new InventoryWithWineDTO(

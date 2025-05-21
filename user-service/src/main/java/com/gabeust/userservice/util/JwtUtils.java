@@ -5,11 +5,14 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import com.gabeust.userservice.entity.User;
+import com.gabeust.userservice.repository.UserRepository;
 import com.gabeust.userservice.service.TokenBlacklistService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import com.auth0.jwt.algorithms.Algorithm;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -23,20 +26,26 @@ public class JwtUtils {
     @Value("${spring.security.jwt.private.key}")
     private String privateKey;
     private final TokenBlacklistService tokenBlacklistService;
+    private final UserRepository userRepository;
 
-    public JwtUtils(TokenBlacklistService tokenBlacklistService) {
+    public JwtUtils(TokenBlacklistService tokenBlacklistService, UserRepository userRepository) {
         this.tokenBlacklistService = tokenBlacklistService;
+        this.userRepository = userRepository;
     }
 
     public String createToken(Authentication authentication) {
         Algorithm algorithm = Algorithm.HMAC256(privateKey);
 
         String email = authentication.getName();
-
+        User user = userRepository.findUserByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException("Usuario no encontrado: " + email);
+        }
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
         return JWT.create().withSubject(email)
+                .withClaim("userId", user.getId())
                 .withClaim("authorities", authorities).withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + 18000000)).withJWTId(UUID.randomUUID().toString())
                 .withNotBefore(new Date(System.currentTimeMillis())).sign(algorithm);
