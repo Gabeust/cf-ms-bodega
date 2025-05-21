@@ -36,7 +36,14 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public Inventory save(Inventory inventory) {
-        return inventoryRepository.save(inventory);
+        Optional<Inventory> existing = inventoryRepository.findByWineId(inventory.getWineId());
+        if (existing.isPresent()) {
+            Inventory current = existing.get();
+            current.setQuantity(current.getQuantity() + inventory.getQuantity());
+            return inventoryRepository.save(current);
+        } else {
+            return inventoryRepository.save(inventory);
+        }
     }
 
     @Override
