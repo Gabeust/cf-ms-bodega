@@ -3,10 +3,11 @@ package com.gabeust.inventoryservice.service;
 import com.gabeust.inventoryservice.dto.InventoryWithWineDTO;
 import com.gabeust.inventoryservice.dto.WineDTO;
 import com.gabeust.inventoryservice.entity.Inventory;
+import com.gabeust.inventoryservice.entity.enums.MovementType;
 import com.gabeust.inventoryservice.repository.InventoryRepository;
 import com.gabeust.inventoryservice.service.client.WineClientService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,12 +17,12 @@ public class InventoryServiceImpl implements InventoryService {
 
     private final InventoryRepository inventoryRepository;
     private final WineClientService wineClientService;
-    private final HttpServletRequest request;
+    private final InventoryMovementService movementService;
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService, HttpServletRequest request) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService, InventoryMovementService movementService) {
         this.inventoryRepository = inventoryRepository;
         this.wineClientService = wineClientService;
-        this.request = request;
+        this.movementService = movementService;
     }
 
     @Override
@@ -36,7 +37,32 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public Inventory save(Inventory inventory) {
-        return inventoryRepository.save(inventory);
+        try {
+            wineClientService.getWineById(inventory.getWineId());
+        } catch (WebClientResponseException.NotFound e) {
+            throw new IllegalArgumentException("El vino con ID " + inventory.getWineId() + " no existe.");
+        } catch (Exception e) {
+            throw new IllegalStateException("Error al verificar el vino: " + e.getMessage(), e);
+        }
+
+        // Validar que no exista inventario para ese vino
+        if (inventoryRepository.existsByWineId(inventory.getWineId())) {
+            throw new IllegalStateException("Ya existe un inventario para el vino con ID: " + inventory.getWineId());
+        }
+
+        // Guardar inventario
+        Inventory savedInventory = inventoryRepository.save(inventory);
+
+        // Registrar movimiento solo si la cantidad es mayor a 0
+        if (savedInventory.getQuantity() > 0) {
+            movementService.registerMovement(
+                    savedInventory.getWineId(),
+                    MovementType.INCREASE,
+                    savedInventory.getQuantity()
+            );
+        }
+
+        return savedInventory;
     }
 
     @Override
@@ -46,6 +72,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         inventory.setQuantity(inventory.getQuantity() + amount);
         inventoryRepository.save(inventory);
+        movementService.registerMovement(wineId, MovementType.INCREASE, amount);
     }
 
     @Override
@@ -59,6 +86,7 @@ public class InventoryServiceImpl implements InventoryService {
         }
         inventory.setQuantity(newQuantity);
         inventoryRepository.save(inventory);
+        movementService.registerMovement(wineId, MovementType.DECREASE, amount);
     }
 
     @Override
@@ -72,7 +100,7 @@ public class InventoryServiceImpl implements InventoryService {
     public InventoryWithWineDTO findInventoryWithWineInfo(Long wineId) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
                 .orElseThrow(() -> new RuntimeException("Inventory not found for wine ID: " + wineId));
-        String token = request.getHeader("Authorization");
+
         WineDTO wine = wineClientService.getWineById(wineId);
 
         return new InventoryWithWineDTO(
