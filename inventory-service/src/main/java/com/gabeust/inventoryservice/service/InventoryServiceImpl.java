@@ -6,6 +6,7 @@ import com.gabeust.inventoryservice.entity.Inventory;
 import com.gabeust.inventoryservice.entity.enums.MovementType;
 import com.gabeust.inventoryservice.repository.InventoryRepository;
 import com.gabeust.inventoryservice.service.client.WineClientService;
+import com.gabeust.inventoryservice.service.messaging.producer.StockAlertProducer;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
@@ -18,11 +19,13 @@ public class InventoryServiceImpl implements InventoryService {
     private final InventoryRepository inventoryRepository;
     private final WineClientService wineClientService;
     private final InventoryMovementService movementService;
+    private final StockAlertProducer stockAlertProducer;  // <-- Agregado
 
-    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService, InventoryMovementService movementService) {
+    public InventoryServiceImpl(InventoryRepository inventoryRepository, WineClientService wineClientService, InventoryMovementService movementService, StockAlertProducer stockAlertProducer) {
         this.inventoryRepository = inventoryRepository;
         this.wineClientService = wineClientService;
         this.movementService = movementService;
+        this.stockAlertProducer = stockAlertProducer;
     }
 
     @Override
@@ -87,6 +90,9 @@ public class InventoryServiceImpl implements InventoryService {
         inventory.setQuantity(newQuantity);
         inventoryRepository.save(inventory);
         movementService.registerMovement(wineId, MovementType.DECREASE, amount);
+        if (newQuantity <= inventory.getMinimumQuantity()) {
+            stockAlertProducer.sendStockAlert(wineId.toString());
+        }
     }
 
     @Override
