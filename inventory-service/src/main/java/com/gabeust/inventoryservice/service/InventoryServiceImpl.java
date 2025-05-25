@@ -40,14 +40,14 @@ public class InventoryServiceImpl implements InventoryService {
         try {
             wineClientService.getWineById(inventory.getWineId());
         } catch (WebClientResponseException.NotFound e) {
-            throw new IllegalArgumentException("El vino con ID " + inventory.getWineId() + " no existe.");
+            throw new IllegalArgumentException("Wine with ID " + inventory.getWineId() + " does not exist.");
         } catch (Exception e) {
-            throw new IllegalStateException("Error al verificar el vino: " + e.getMessage(), e);
+            throw new IllegalStateException("Error while verifying the wine: " + e.getMessage(), e);
         }
 
         // Validar que no exista inventario para ese vino
         if (inventoryRepository.existsByWineId(inventory.getWineId())) {
-            throw new IllegalStateException("Ya existe un inventario para el vino con ID: " + inventory.getWineId());
+            throw new IllegalStateException("An inventory already exists for the wine with ID: " + inventory.getWineId());
         }
 
         // Guardar inventario
