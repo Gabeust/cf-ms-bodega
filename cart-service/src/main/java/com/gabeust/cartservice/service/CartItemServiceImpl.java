@@ -64,13 +64,12 @@ public class CartItemServiceImpl implements CartItemService{
     public void removeItem(Long itemId) {
         cartItemRepository.deleteById(itemId);
     }
-
     @Override
     public CartItem addOrUpdateItem(Long cartId, Long wineId, Integer quantity) {
-
         Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new RuntimeException("Carrito no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
 
+        // Verifica si existe el vino
         WineDTO wine;
         InventoryDTO inventory;
 
@@ -78,17 +77,12 @@ public class CartItemServiceImpl implements CartItemService{
             wine = wineClientService.getWineById(wineId);
             inventory = inventoryClientService.getInventoryByWineId(wineId);
         } catch (Exception e) {
-            throw new RuntimeException("Error al obtener información del vino o inventario", e);
+            throw new RuntimeException("Failed to fetch wine or inventory data", e);
         }
 
+        // Validar que haya suficiente stock DISPONIBLE (sin descontar aún)
         if (inventory.quantity() < quantity) {
-            throw new RuntimeException("Stock insuficiente");
-        }
-
-        try {
-            inventoryClientService.decreaseStock(wineId, quantity);
-        } catch (Exception e) {
-            throw new RuntimeException("Error al disminuir el stock", e);
+            throw new RuntimeException("Insufficient stock");
         }
 
         // Buscar si ya existe ese vino en el carrito
@@ -100,10 +94,11 @@ public class CartItemServiceImpl implements CartItemService{
             return cartItemRepository.save(item);
         } else {
             CartItem item = new CartItem();
-            item.setCart(cart); // Seteás el objeto Cart, no el ID
+            item.setCart(cart);
             item.setWineId(wineId);
             item.setQuantity(quantity);
             return cartItemRepository.save(item);
         }
     }
+
 }

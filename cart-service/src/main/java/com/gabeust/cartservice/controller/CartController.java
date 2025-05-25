@@ -2,7 +2,10 @@ package com.gabeust.cartservice.controller;
 
 import com.gabeust.cartservice.entity.Cart;
 import com.gabeust.cartservice.service.CartServiceImpl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/cart")
@@ -39,8 +42,17 @@ public class CartController {
     }
 
     @PostMapping("/{userId}/checkout")
-    public Cart checkout(@PathVariable Long userId) {
-        return cartService.checkoutCart(userId);
+    public ResponseEntity<?> checkout(@PathVariable Long userId) {
+        try {
+            Cart checkedOutCart = cartService.checkoutCart(userId);
+            return ResponseEntity.ok(checkedOutCart);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @GetMapping("/{userId}/history")
+    public List<Cart> getOrderHistory(@PathVariable Long userId) {
+        return cartService.getOrderHistory(userId);
     }
 
 }

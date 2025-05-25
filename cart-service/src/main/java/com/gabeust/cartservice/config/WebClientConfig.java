@@ -10,14 +10,14 @@ public class WebClientConfig {
     @Bean
     public WebClient wineServiceClient() {
         return WebClient.builder()
-                .baseUrl("http://localhost:8081/api/v1/wines") // Ajustá el puerto
+                .baseUrl("http://localhost:8080/api/v1/wines")
                 .build();
     }
 
     @Bean
     public WebClient inventoryServiceClient() {
         return WebClient.builder()
-                .baseUrl("http://localhost:8082/api/v1/inventory") // Ajustá el puerto
+                .baseUrl("http://localhost:8081/api/v1/inventory")
                 .build();
     }
-}
+ }
