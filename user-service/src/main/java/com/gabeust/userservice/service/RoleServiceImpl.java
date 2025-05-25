@@ -30,4 +30,8 @@ public class RoleServiceImpl implements RoleService {
     public Role save(Role role) {
         return roleRepository.save(role);
     }
+
+    public Optional<Role> findByName(String name) {
+        return roleRepository.findByName(name);
+    }
 }
