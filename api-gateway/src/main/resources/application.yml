@@ -1,0 +1,39 @@
+server:
+  port: 8084
+
+api:
+  gateway:
+   secret: "30a146390d13fe8aea24a6a1abc1124cf1677aadd6d2a5b3af0e214fbedbe0b7"
+
+spring:
+  security:
+    jwt:
+      private:
+        key: "0F16AAA41D58395A51D24FE20CBE594CC95E161754FD02D2694D7F41761845DC"
+
+  cloud:
+    gateway:
+      routes:
+        - id: cart-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/cart/**
+          filters:
+            - AddRequestHeader=X-Gateway-Auth, ${api.gateway.secret}
+            - name: AuthenticationFilter
+
+        - id: inventory-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/inventory/**
+          filters:
+            - AddRequestHeader=X-Gateway-Auth, ${api.gateway.secret}
+            - name: AuthenticationFilter
+
+        - id: wine-service
+          uri: http://localhost:8080
+          predicates:
+            - Path=/api/v1/wines/**
+          filters:
+            - AddRequestHeader=X-Gateway-Auth, ${api.gateway.secret}
+            - name: AuthenticationFilter
