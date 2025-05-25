@@ -5,8 +5,11 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.gabeust.userservice.dto.AuthLoginRequestDTO;
 import com.gabeust.userservice.dto.AuthResponseDTO;
 import com.gabeust.userservice.dto.ChangePasswordRequest;
+import com.gabeust.userservice.dto.RegisterRequestDTO;
+import com.gabeust.userservice.entity.Role;
 import com.gabeust.userservice.entity.User;
 import com.gabeust.userservice.service.PasswordResetService;
+import com.gabeust.userservice.service.RoleServiceImpl;
 import com.gabeust.userservice.service.UserDetailsServiceImpl;
 import com.gabeust.userservice.service.UserServiceImpl;
 import com.gabeust.userservice.util.JwtUtils;
@@ -15,6 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Controlador REST para autenticación y operaciones relacionadas con la seguridad.
@@ -32,16 +39,61 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final UserServiceImpl userService;
     private final PasswordEncoder passwordEncoder;
+    private final RoleServiceImpl roleService;
 
-    public AuthController(UserDetailsServiceImpl userDetailsService, PasswordResetService passwordResetService, JwtUtils jwtUtils, UserServiceImpl userService, PasswordEncoder passwordEncoder) {
+    public AuthController(UserDetailsServiceImpl userDetailsService, PasswordResetService passwordResetService, JwtUtils jwtUtils, UserServiceImpl userService, PasswordEncoder passwordEncoder, RoleServiceImpl roleService) {
         this.userDetailsService = userDetailsService;
         this.passwordResetService = passwordResetService;
         this.jwtUtils = jwtUtils;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
     }
+    /**
+     * Registra un nuevo usuario en el sistema.
+     *
+     * Asigna por defecto el rol USER. Valida que el email no esté registrado,
+     * la contraseña no esté vacía y encripta la contraseña antes de guardar.
+     *
+     * @param registerRequest contiene los datos necesarios para crear el nuevo usuario
+     * @return información del usuario creado (sin exponer la contraseña) o un error si la validación falla
+     */
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO registerRequest) {
+        // Validar email
+        if (userService.existsByEmail(registerRequest.email())) {
+            return ResponseEntity.badRequest().body("Email is already registered.");
+        }
 
+        // Validar contraseña
+        if (registerRequest.password() == null || registerRequest.password().isBlank()) {
+            return ResponseEntity.badRequest().body("Password cannot be empty.");
+        }
 
+        // Buscar rol USER
+        Optional<Role> userRoleOpt = roleService.findByName("USER");
+        if (userRoleOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Default role USER not found in the system.");
+        }
+
+        // Crear usuario
+        User user = new User();
+        user.setEmail(registerRequest.email());
+        user.setPassword(userService.encriptPassword(registerRequest.password()));
+        user.setRolesList(Set.of(userRoleOpt.get()));
+
+        // Guardar usuario
+        User newUser = userService.save(user);
+
+        // Retornar respuesta sin contraseña
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "id", newUser.getId(),
+                "email", newUser.getEmail(),
+                "roles", newUser.getRolesList().stream().map(Role::getName).toList(),
+                "message", "User registered successfully."
+        ));
+    }
     /**
      * Autentica al usuario y genera un token JWT si las credenciales son válidas.
      *
