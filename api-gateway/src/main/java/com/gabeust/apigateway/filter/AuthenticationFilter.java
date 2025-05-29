@@ -4,7 +4,6 @@ package com.gabeust.apigateway.filter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -13,7 +12,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
+/**
+ * Filtro de autenticación para el API Gateway que valida el token JWT
+ * en las peticiones entrantes, excepto en rutas públicas.
+ *
+ * Usa un servicio externo para validar el token y agrega un header
+ * secreto para que los microservicios confíen en que la petición
+ * viene del Gateway.
+ */
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config> {
 
@@ -30,6 +36,18 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
 
     }
 
+    /**
+     * Aplica el filtro de autenticación.
+     *
+     * Verifica si la ruta es pública para dejar pasar sin token.
+     * En caso contrario, valida la existencia y formato del token JWT en el header Authorization.
+     * Luego llama a un servicio externo para validar el token.
+     * Si es válido, añade el header secreto y permite el paso.
+     * Si no, responde con 401 Unauthorized.
+     *
+     * @param config configuración del filtro (vacía en esta implementación)
+     * @return un filtro que valida la autenticación
+     */
     @Override
     public GatewayFilter apply(Config config) {
         return (exchange, chain) -> {
@@ -77,11 +95,23 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         };
     }
 
+    /**
+     * Comprueba si la ruta actual es pública y no requiere autenticación.
+     *
+     * @param request petición HTTP
+     * @return true si la ruta es pública, false si requiere autenticación
+     */
     private boolean isPublicPath(ServerHttpRequest request) {
         String path = request.getURI().getPath();
         return path.contains("/api/auth/login");
     }
 
+    /**
+     * Responde con un código 401 Unauthorized y termina la cadena de filtros.
+     *
+     * @param exchange contexto del servidor web
+     * @return un Mono que representa la operación de respuesta completa
+     */
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
