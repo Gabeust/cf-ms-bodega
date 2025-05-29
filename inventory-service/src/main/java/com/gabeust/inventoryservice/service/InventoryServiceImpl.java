@@ -12,7 +12,13 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 
 import java.util.List;
 import java.util.Optional;
-
+/**
+ * Implementación del servicio de inventario que gestiona las operaciones sobre el inventario de vinos.
+ *
+ * Este servicio permite buscar, crear, actualizar, eliminar inventarios y manejar movimientos de stock.
+ * También integra llamadas al servicio de vinos para validar la existencia de los vinos asociados.
+ * Además, emite alertas mediante Kafka cuando el stock alcanza niveles mínimos.
+ */
 @Service
 public class InventoryServiceImpl implements InventoryService {
 
@@ -27,17 +33,34 @@ public class InventoryServiceImpl implements InventoryService {
         this.movementService = movementService;
         this.stockAlertProducer = stockAlertProducer;
     }
-
+    /**
+     * Obtiene todos los inventarios registrados.
+     *
+     * @return lista de todos los inventarios
+     */
     @Override
     public List<Inventory> findAll() {
         return inventoryRepository.findAll();
     }
-
+    /**
+     * Busca el inventario correspondiente a un vino específico.
+     *
+     * @param wineId ID del vino
+     * @return Optional con el inventario si existe
+     */
     @Override
     public Optional<Inventory> findByWineId(Long wineId) {
         return inventoryRepository.findByWineId(wineId);
     }
-
+    /**
+     * Guarda un nuevo inventario validando que el vino exista y que no exista inventario previo para ese vino.
+     * Además, registra un movimiento inicial si la cantidad es mayor a cero.
+     *
+     * @param inventory inventario a guardar
+     * @return inventario guardado
+     * @throws IllegalArgumentException si el vino no existe
+     * @throws IllegalStateException    si ya existe inventario para ese vino o hay error en la validación
+     */
     @Override
     public Inventory save(Inventory inventory) {
         try {
@@ -67,7 +90,13 @@ public class InventoryServiceImpl implements InventoryService {
 
         return savedInventory;
     }
-
+    /**
+     * Incrementa el stock de un vino en la cantidad especificada y registra el movimiento.
+     *
+     * @param wineId ID del vino
+     * @param amount cantidad a incrementar
+     * @throws RuntimeException si no se encuentra el inventario para el vino
+     */
     @Override
     public void increaseStock(Long wineId, int amount) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
@@ -77,7 +106,14 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.save(inventory);
         movementService.registerMovement(wineId, MovementType.INCREASE, amount);
     }
-
+    /**
+     * Decrementa el stock de un vino en la cantidad especificada y registra el movimiento.
+     * Envía una alerta si el nuevo stock es menor o igual al stock mínimo permitido.
+     *
+     * @param wineId ID del vino
+     * @param amount cantidad a decrementar
+     * @throws RuntimeException si no se encuentra inventario o si el stock es insuficiente
+     */
     @Override
     public void decreaseStock(Long wineId, int amount) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
@@ -94,7 +130,13 @@ public class InventoryServiceImpl implements InventoryService {
             stockAlertProducer.sendStockAlert(wineId.toString());
         }
     }
-
+    /**
+     * Elimina el inventario asociado a un vino específico.
+     *
+     * @param wineId ID del vino
+     * @return true si la eliminación fue exitosa
+     * @throws RuntimeException si no se encuentra el inventario
+     */
     @Override
     public boolean deleteByWineId(Long wineId) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
@@ -103,6 +145,13 @@ public class InventoryServiceImpl implements InventoryService {
         inventoryRepository.delete(inventory);
         return true;
     }
+    /**
+     * Obtiene un DTO que combina la información del inventario con los datos del vino consultados mediante el servicio de vinos.
+     *
+     * @param wineId ID del vino
+     * @return DTO con inventario y datos del vino
+     * @throws RuntimeException si no se encuentra el inventario
+     */
     public InventoryWithWineDTO findInventoryWithWineInfo(Long wineId) {
         Inventory inventory = inventoryRepository.findByWineId(wineId)
                 .orElseThrow(() -> new RuntimeException("Inventory not found for wine ID: " + wineId));
