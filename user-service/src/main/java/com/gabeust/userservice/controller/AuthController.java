@@ -145,16 +145,16 @@ public class AuthController {
         if (authentication == null || !authentication.isAuthenticated()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You are not authenticated.");
         }
-        // Obtener email del usuario autenticado
+        // Obtiene el email del usuario autenticado
 
         String email = authentication.getName();
 
-        // Buscar usuario en la base de datos
+        // Busca usuario en la base de datos
         User user = userService.findUserByEmail(email);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
         }
-        // Verificar la contraseña actual
+        // Verifica la contraseña actual
         if (!passwordEncoder.matches(request.currentPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Incorrect current password.");
         }
@@ -164,7 +164,12 @@ public class AuthController {
 
         return ResponseEntity.ok("Password changed successfully.");
     }
-
+    /**
+     * Valida un token JWT (por ejemplo, para confirmar si aún es válido).
+     *
+     * @param token token JWT a validar
+     * @return 200 OK si es válido, 401 Unauthorized si es inválido o expirado
+     */
     @GetMapping("/validate")
     public ResponseEntity<Void> validateToken(@RequestParam("token") String token) {
         try {

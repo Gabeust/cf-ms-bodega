@@ -17,7 +17,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
+/**
+ * Implementación del servicio de detalles de usuario para Spring Security.
+ *
+ * Provee la carga de usuarios por email, autenticación con validación de credenciales,
+ * manejo de bloqueo de cuenta por intentos fallidos, y generación de tokens JWT.
+ */
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
 
@@ -30,7 +35,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         this.jwtUtils = jwtUtils;
         this.passwordEncoder = passwordEncoder;
     }
-
+    /**
+     * Carga el usuario por email para autenticación.
+     *
+     * @param email el correo electrónico del usuario
+     * @return UserDetails con la información del usuario
+     * @throws UsernameNotFoundException si no se encuentra el usuario
+     * @throws LockedException si la cuenta está bloqueada
+     */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         User user = userRepository.findUserByEmail(email);
@@ -52,6 +64,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 user.getCredentialNotExpired(),
                 authorityList);
     }
+    /**
+     * Autentica el usuario con email y contraseña.
+     *
+     * @param email correo electrónico del usuario
+     * @param password contraseña en texto plano para validar
+     * @return objeto Authentication si es exitoso
+     * @throws UsernameNotFoundException si no existe el usuario
+     * @throws LockedException si la cuenta está bloqueada
+     * @throws RuntimeException si la contraseña es incorrecta
+     */
     public Authentication authenticate(String email, String password) {
         User user = userRepository.findUserByEmail(email);
 
