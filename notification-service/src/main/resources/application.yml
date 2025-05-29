@@ -1,7 +1,17 @@
 server:
   port: 8085
 
+api:
+  gateway:
+    secret: 30a146390d13fe8aea24a6a1abc1124cf1677aadd6d2a5b3af0e214fbedbe0b7
+
 spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/notification?useSSL=false&serverTimezone=UTC
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
